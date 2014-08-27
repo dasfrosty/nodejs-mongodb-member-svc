@@ -3,7 +3,7 @@ var request = require('supertest');
 
 var createServer = require(__dirname + '/../lib/server.js');
 
-var mongodbUrl = 'mongodb://localhost:27017/test_restify_mongoose';
+var mongodbUrl = 'mongodb://localhost:27017/test_sso';
 var restBaseUrl = 'http://localhost:3000'
 
 var uniqueMember = function () {
@@ -112,6 +112,123 @@ describe('SSO REST', function () {
             .end(function(err, res) {
               should.not.exist(err);
               should.exist(res.body.message);
+              done();
+            });
+        });
+    });
+
+  });
+
+  describe('Auth API', function () {
+
+    it('should allow login with username', function (done) {
+      var expected = uniqueMember();
+      var auth = {
+        who: expected.username,
+        password: expected.password
+      };
+      request(restBaseUrl)
+        .post('/members')
+        .accept('application/json')
+        .send(expected)
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          should.not.exist(err);
+          res.body.username.should.equal(expected.username);
+          res.body.email.should.equal(expected.email);
+          res.body.password.should.equal(expected.password);
+          var expectedId = res.body._id;
+          request(restBaseUrl)
+            .put('/auth')
+            .accept('application/json')
+            .send(auth)
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end(function(err, res) {
+              should.not.exist(err);
+              should.not.exist(res.body.status);
+              should.not.exist(res.body.reason);
+              res.body._id.should.equal(expectedId);
+              res.body.username.should.equal(expected.username);
+              res.body.email.should.equal(expected.email);
+              res.body.password.should.equal(expected.password);
+              done();
+            });
+        });
+    });
+
+    it('should prevent login with non-existent username', function (done) {
+      var expected = uniqueMember();
+      var auth = {
+        who: 'x' + expected.username,
+        password: expected.password
+      };
+      request(restBaseUrl)
+        .post('/members')
+        .accept('application/json')
+        .send(expected)
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          should.not.exist(err);
+          res.body.username.should.equal(expected.username);
+          res.body.email.should.equal(expected.email);
+          res.body.password.should.equal(expected.password);
+          var expectedId = res.body._id;
+          request(restBaseUrl)
+            .put('/auth')
+            .accept('application/json')
+            .send(auth)
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end(function(err, res) {
+              should.not.exist(err);
+              should.not.exist(res.body._id);
+              should.not.exist(res.body.username);
+              should.not.exist(res.body.email);
+              should.not.exist(res.body.password);
+              res.body.status.should.equal('failure');
+              should.exist(res.body.reason);
+              done();
+            });
+        });
+    });
+
+    it('should prevent login with bad password', function (done) {
+      var expected = uniqueMember();
+      var auth = {
+        who: expected.username,
+        password: 'x' + expected.password
+      };
+      request(restBaseUrl)
+        .post('/members')
+        .accept('application/json')
+        .send(expected)
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          should.not.exist(err);
+          res.body.username.should.equal(expected.username);
+          res.body.email.should.equal(expected.email);
+          res.body.password.should.equal(expected.password);
+          var expectedId = res.body._id;
+          request(restBaseUrl)
+            .put('/auth')
+            .accept('application/json')
+            .send(auth)
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end(function(err, res) {
+              should.not.exist(err);
+              should.not.exist(res.body._id);
+              should.not.exist(res.body.username);
+              should.not.exist(res.body.email);
+              should.not.exist(res.body.password);
+              console.dir(res.body.status);
+              res.body.status.should.equal('failure');
+              console.dir(res.body.reason);
+              should.exist(res.body.reason);
               done();
             });
         });
