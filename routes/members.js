@@ -28,9 +28,9 @@ module.exports = function (mongoose, server) {
   server.put('/auth', function (req, res, next) {
     // console.dir(req.body);
     var cmd = req.body;
-    console.log('/auth: cmd = %s', JSON.stringify(cmd));
+    // console.log('/auth: cmd = %s', JSON.stringify(cmd));
     if (!cmd.who || !cmd.password) {
-      console.log('missing credentials');
+      // console.log('missing credentials');
       res.send(invalidCredentials);
       return next();
     }
@@ -38,7 +38,7 @@ module.exports = function (mongoose, server) {
     var criteria = validator.isEmail(who) ? { email: who } : { username: who };
     Member.find(criteria, function (err, members) {
       if (err) throw err;
-      console.dir(members);
+      // console.dir(members);
       if (members && members[0] && members[0].password == cmd.password) {
         res.send(members[0]);
         return next();

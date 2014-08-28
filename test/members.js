@@ -179,9 +179,7 @@ describe('SSO REST', function () {
                   should.not.exist(res.body.username);
                   should.not.exist(res.body.email);
                   should.not.exist(res.body.password);
-                  console.dir(res.body.status);
                   res.body.status.should.equal('failure');
-                  console.dir(res.body.reason);
                   should.exist(res.body.reason);
                   var auth = {
                     who: patch.email,
@@ -306,9 +304,7 @@ describe('SSO REST', function () {
                   should.not.exist(res.body.username);
                   should.not.exist(res.body.email);
                   should.not.exist(res.body.password);
-                  console.dir(res.body.status);
                   res.body.status.should.equal('failure');
-                  console.dir(res.body.reason);
                   should.exist(res.body.reason);
                   var auth = {
                     who: expected.email,
@@ -467,9 +463,7 @@ describe('SSO REST', function () {
               should.not.exist(res.body.username);
               should.not.exist(res.body.email);
               should.not.exist(res.body.password);
-              console.dir(res.body.status);
               res.body.status.should.equal('failure');
-              console.dir(res.body.reason);
               should.exist(res.body.reason);
               done();
             });
