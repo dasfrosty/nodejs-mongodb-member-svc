@@ -137,7 +137,7 @@ describe('SSO REST', function () {
       var expected = uniqueMember();
       var patch = {
         email: uniqueMember().email
-      }
+      };
       request(restBaseUrl)
         .post('/members')
         .accept('application/json')
@@ -179,6 +179,59 @@ describe('SSO REST', function () {
                   res.body._id.should.equal(expectedId);
                   res.body.username.should.equal(expected.username);
                   res.body.email.should.equal(patch.email);
+                  res.body.password.should.equal(expected.password);
+                  done();
+                });
+            });
+        });
+    });
+
+    it('should allow updating a members username', function (done) {
+      var expected = uniqueMember();
+      var patch = {
+        username: uniqueMember().username
+      };
+      request(restBaseUrl)
+        .post('/members')
+        .accept('application/json')
+        .send(expected)
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          should.not.exist(err);
+          res.body.username.should.equal(expected.username);
+          res.body.email.should.equal(expected.email);
+          res.body.password.should.equal(expected.password);
+          var expectedId = res.body._id;
+          request(restBaseUrl)
+            .patch('/members/' + expectedId)
+            .accept('application/json')
+            .send(patch)
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end(function(err, res) {
+              should.not.exist(err);
+              res.body._id.should.equal(expectedId);
+              res.body.username.should.equal(patch.username);
+              res.body.email.should.equal(expected.email);
+              res.body.password.should.equal(expected.password);
+              var auth = {
+                who: patch.username,
+                password: expected.password
+              }
+              request(restBaseUrl)
+                .put('/auth')
+                .accept('application/json')
+                .send(auth)
+                .expect('Content-Type', /json/)
+                .expect(200)
+                .end(function(err, res) {
+                  should.not.exist(err);
+                  should.not.exist(res.body.status);
+                  should.not.exist(res.body.reason);
+                  res.body._id.should.equal(expectedId);
+                  res.body.username.should.equal(patch.username);
+                  res.body.email.should.equal(expected.email);
                   res.body.password.should.equal(expected.password);
                   done();
                 });
