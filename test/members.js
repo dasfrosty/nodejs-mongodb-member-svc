@@ -6,8 +6,9 @@ var createServer = require(__dirname + '/../lib/server.js');
 var mongodbUrl = 'mongodb://localhost:27017/test_sso';
 var restBaseUrl = 'http://localhost:3000'
 
+var unique = new Date().getTime();
 var uniqueMember = function () {
-  var timestamp = new Date().getTime();
+  var timestamp = unique++;
   return {
     username: 'example' + timestamp,
     email: 'example-' + timestamp + '@example.com',
@@ -162,25 +163,46 @@ describe('SSO REST', function () {
               res.body.username.should.equal(expected.username);
               res.body.email.should.equal(patch.email);
               res.body.password.should.equal(expected.password);
-              var auth = {
-                who: patch.email,
+              var oldAuth = {
+                who: expected.email,
                 password: expected.password
               }
               request(restBaseUrl)
                 .put('/auth')
                 .accept('application/json')
-                .send(auth)
+                .send(oldAuth)
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .end(function(err, res) {
                   should.not.exist(err);
-                  should.not.exist(res.body.status);
-                  should.not.exist(res.body.reason);
-                  res.body._id.should.equal(expectedId);
-                  res.body.username.should.equal(expected.username);
-                  res.body.email.should.equal(patch.email);
-                  res.body.password.should.equal(expected.password);
-                  done();
+                  should.not.exist(res.body._id);
+                  should.not.exist(res.body.username);
+                  should.not.exist(res.body.email);
+                  should.not.exist(res.body.password);
+                  console.dir(res.body.status);
+                  res.body.status.should.equal('failure');
+                  console.dir(res.body.reason);
+                  should.exist(res.body.reason);
+                  var auth = {
+                    who: patch.email,
+                    password: expected.password
+                  }
+                  request(restBaseUrl)
+                    .put('/auth')
+                    .accept('application/json')
+                    .send(auth)
+                    .expect('Content-Type', /json/)
+                    .expect(200)
+                    .end(function(err, res) {
+                      should.not.exist(err);
+                      should.not.exist(res.body.status);
+                      should.not.exist(res.body.reason);
+                      res.body._id.should.equal(expectedId);
+                      res.body.username.should.equal(expected.username);
+                      res.body.email.should.equal(patch.email);
+                      res.body.password.should.equal(expected.password);
+                      done();
+                    });
                 });
             });
         });
@@ -234,6 +256,80 @@ describe('SSO REST', function () {
                   res.body.email.should.equal(expected.email);
                   res.body.password.should.equal(expected.password);
                   done();
+                });
+            });
+        });
+    });
+
+    it('should allow updating a members password', function (done) {
+      var expected = uniqueMember();
+      var patch = {
+        password: 'x' + expected.password
+      };
+      request(restBaseUrl)
+        .post('/members')
+        .accept('application/json')
+        .send(expected)
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          should.not.exist(err);
+          res.body.username.should.equal(expected.username);
+          res.body.email.should.equal(expected.email);
+          res.body.password.should.equal(expected.password);
+          var expectedId = res.body._id;
+          request(restBaseUrl)
+            .patch('/members/' + expectedId)
+            .accept('application/json')
+            .send(patch)
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end(function(err, res) {
+              should.not.exist(err);
+              res.body._id.should.equal(expectedId);
+              res.body.username.should.equal(expected.username);
+              res.body.email.should.equal(expected.email);
+              res.body.password.should.equal(patch.password);
+              var oldAuth = {
+                who: expected.email,
+                password: expected.password
+              }
+              request(restBaseUrl)
+                .put('/auth')
+                .accept('application/json')
+                .send(oldAuth)
+                .expect('Content-Type', /json/)
+                .expect(200)
+                .end(function(err, res) {
+                  should.not.exist(err);
+                  should.not.exist(res.body._id);
+                  should.not.exist(res.body.username);
+                  should.not.exist(res.body.email);
+                  should.not.exist(res.body.password);
+                  console.dir(res.body.status);
+                  res.body.status.should.equal('failure');
+                  console.dir(res.body.reason);
+                  should.exist(res.body.reason);
+                  var auth = {
+                    who: expected.email,
+                    password: patch.password
+                  }
+                  request(restBaseUrl)
+                    .put('/auth')
+                    .accept('application/json')
+                    .send(auth)
+                    .expect('Content-Type', /json/)
+                    .expect(200)
+                    .end(function(err, res) {
+                      should.not.exist(err);
+                      should.not.exist(res.body.status);
+                      should.not.exist(res.body.reason);
+                      res.body._id.should.equal(expectedId);
+                      res.body.username.should.equal(expected.username);
+                      res.body.email.should.equal(expected.email);
+                      res.body.password.should.equal(patch.password);
+                      done();
+                    });
                 });
             });
         });
