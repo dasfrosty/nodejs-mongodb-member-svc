@@ -158,6 +158,30 @@ describe('SSO REST', function () {
         });
     });
 
+    it('should prevent login with missing credentials', function (done) {
+      var expected = uniqueMember();
+      var auth = {
+        who: '',
+        password: ''
+      };
+      request(restBaseUrl)
+        .put('/auth')
+        .accept('application/json')
+        .send(auth)
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          should.not.exist(err);
+          should.not.exist(res.body._id);
+          should.not.exist(res.body.username);
+          should.not.exist(res.body.email);
+          should.not.exist(res.body.password);
+          res.body.status.should.equal('failure');
+          should.exist(res.body.reason);
+          done();
+        });
+    });
+
     it('should prevent login with non-existent username', function (done) {
       var expected = uniqueMember();
       var auth = {
@@ -229,6 +253,43 @@ describe('SSO REST', function () {
               res.body.status.should.equal('failure');
               console.dir(res.body.reason);
               should.exist(res.body.reason);
+              done();
+            });
+        });
+    });
+
+    it('should allow login with email', function (done) {
+      var expected = uniqueMember();
+      var auth = {
+        who: expected.email,
+        password: expected.password
+      };
+      request(restBaseUrl)
+        .post('/members')
+        .accept('application/json')
+        .send(expected)
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          should.not.exist(err);
+          res.body.username.should.equal(expected.username);
+          res.body.email.should.equal(expected.email);
+          res.body.password.should.equal(expected.password);
+          var expectedId = res.body._id;
+          request(restBaseUrl)
+            .put('/auth')
+            .accept('application/json')
+            .send(auth)
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end(function(err, res) {
+              should.not.exist(err);
+              should.not.exist(res.body.status);
+              should.not.exist(res.body.reason);
+              res.body._id.should.equal(expectedId);
+              res.body.username.should.equal(expected.username);
+              res.body.email.should.equal(expected.email);
+              res.body.password.should.equal(expected.password);
               done();
             });
         });

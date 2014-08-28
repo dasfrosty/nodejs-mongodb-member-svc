@@ -1,4 +1,10 @@
 var restifyMongoose = require('restify-mongoose');
+var validator = require('validator');
+
+var invalidCredentials = {
+  status: 'failure',
+  reason: 'invalid_credentials'
+};
 
 module.exports = function (mongoose, server) {
 
@@ -23,18 +29,21 @@ module.exports = function (mongoose, server) {
     // console.dir(req.body);
     var cmd = req.body;
     console.log('/auth: cmd = %s', JSON.stringify(cmd));
-    Member.find({ username: cmd.who }, function (err, members) {
+    if (!cmd.who || !cmd.password) {
+      console.log('missing credentials');
+      res.send(invalidCredentials);
+      return next();
+    }
+    var who = cmd.who.toLowerCase();
+    var criteria = validator.isEmail(who) ? { email: who } : { username: who };
+    Member.find(criteria, function (err, members) {
       if (err) throw err;
       console.dir(members);
       if (members && members[0] && members[0].password == cmd.password) {
         res.send(members[0]);
         return next();
       };
-      var errorResponse = {
-        status: 'failure',
-        reason: 'invalid_credentials'
-      };
-      res.send(errorResponse);
+      res.send(invalidCredentials);
       next();
     });
   });

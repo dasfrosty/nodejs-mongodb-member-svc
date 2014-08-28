@@ -11,7 +11,8 @@
   "dependencies": {
     "mongoose": "^3.8.15",
     "restify": "^2.8.2",
-    "restify-mongoose": "^0.2.2"
+    "restify-mongoose": "^0.2.2",
+    "validator": "^3.17.0"
   },
   "devDependencies": {
     "mocha": "*",
