@@ -87,6 +87,22 @@ describe('SSO REST', function () {
         });
     });
 
+    it('should not allow a member to be created with an invalid email', function (done) {
+      var expected = uniqueMember();
+      expected.email = expected.username;
+      request(restBaseUrl)
+        .post('/members')
+        .accept('application/json')
+        .send(expected)
+        .expect('Content-Type', /json/)
+        .expect(400)
+        .end(function(err, res) {
+          should.not.exist(err);
+          should.exist(res.body.message);
+          done();
+        });
+    });
+
     it('should not allow duplicate emails', function (done) {
       var expected = uniqueMember();
       request(restBaseUrl)
@@ -113,6 +129,59 @@ describe('SSO REST', function () {
               should.not.exist(err);
               should.exist(res.body.message);
               done();
+            });
+        });
+    });
+
+    it('should allow updating a members email address', function (done) {
+      var expected = uniqueMember();
+      var patch = {
+        email: uniqueMember().email
+      }
+      request(restBaseUrl)
+        .post('/members')
+        .accept('application/json')
+        .send(expected)
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          should.not.exist(err);
+          res.body.username.should.equal(expected.username);
+          res.body.email.should.equal(expected.email);
+          res.body.password.should.equal(expected.password);
+          var expectedId = res.body._id;
+          request(restBaseUrl)
+            .patch('/members/' + expectedId)
+            .accept('application/json')
+            .send(patch)
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end(function(err, res) {
+              should.not.exist(err);
+              res.body._id.should.equal(expectedId);
+              res.body.username.should.equal(expected.username);
+              res.body.email.should.equal(patch.email);
+              res.body.password.should.equal(expected.password);
+              var auth = {
+                who: patch.email,
+                password: expected.password
+              }
+              request(restBaseUrl)
+                .put('/auth')
+                .accept('application/json')
+                .send(auth)
+                .expect('Content-Type', /json/)
+                .expect(200)
+                .end(function(err, res) {
+                  should.not.exist(err);
+                  should.not.exist(res.body.status);
+                  should.not.exist(res.body.reason);
+                  res.body._id.should.equal(expectedId);
+                  res.body.username.should.equal(expected.username);
+                  res.body.email.should.equal(patch.email);
+                  res.body.password.should.equal(expected.password);
+                  done();
+                });
             });
         });
     });

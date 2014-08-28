@@ -10,7 +10,7 @@ module.exports = function (mongoose, server) {
 
   var MemberSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true, validate: validator.isEmail },
     password: { type: String, required: true, trim: true }
   });
 
@@ -22,7 +22,7 @@ module.exports = function (mongoose, server) {
   // server.get('/members', members.query());
   server.get('/members/:id', members.detail());
   server.post('/members', members.insert());
-  // server.patch('/members/:id', members.update());
+  server.patch('/members/:id', members.update());
   // server.del('/members/:id', members.remove());
 
   server.put('/auth', function (req, res, next) {
